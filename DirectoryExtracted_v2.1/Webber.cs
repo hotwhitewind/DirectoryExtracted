@@ -450,7 +450,7 @@ namespace DirectoryExtracted_v2._1
             webReqLog.Method = Utility.Post;
             webReqLog.SendChunked = false;
             webReqLog.KeepAlive = true;
-            webReqLog.Referer = MainRef + "buildings";
+            webReqLog.Referer = MainRef + "\\buildings";
             webReqLog.AllowAutoRedirect = true;
             webReqLog.CookieContainer = _cook;
             webReqLog.UserAgent = Utility.UserAgent;
@@ -469,18 +469,25 @@ namespace DirectoryExtracted_v2._1
             webReqLog.Timeout = 30000;
 
             var document = new HtmlDocument();
+            bool isPaged = true;
+            int pages = 1;
 
-            try
+            using (var webResLog = await webReqLog.GetResponseAsync())
             {
-                using (var webResLog = await webReqLog.GetResponseAsync())
+                retSearch.RefString = webResLog.ResponseUri.ToString();
+            }
+            retSearch.SubDirectory = new Dictionary<string, string>();
+            var referer = MainRef + "buildings";
+            do
+            {
+                try
                 {
-                    retSearch.RefString = webResLog.ResponseUri.ToString();
-                    webReqLog = (HttpWebRequest) WebRequest.Create(retSearch.RefString);// + "?size=24");
+                    webReqLog = (HttpWebRequest) WebRequest.Create(retSearch.RefString + $"&page={pages}");
                     webReqLog.Method = Utility.Get;
+                    webReqLog.Headers.Add("X-Requested-With", "XMLHttpRequest");
                     webReqLog.SendChunked = false;
                     webReqLog.KeepAlive = true;
-                    webReqLog.Proxy = null;
-                    webReqLog.Referer = MainRef + "buildings";
+                    webReqLog.Referer = referer;
                     webReqLog.AllowAutoRedirect = true;
                     webReqLog.CookieContainer = _cook;
                     webReqLog.UserAgent = Utility.UserAgent;
@@ -506,7 +513,6 @@ namespace DirectoryExtracted_v2._1
 
                             //найдем объекты 
                             var li = document.DocumentNode.SelectNodes("//li[@class = 'title']");
-                            retSearch.SubDirectory = new Dictionary<string, string>();
                             foreach (var li1 in li)
                             {
                                 var a = li1.ChildNodes.Where(c => c.Name == "a").ToList();
@@ -519,21 +525,30 @@ namespace DirectoryExtracted_v2._1
                                 retSearch.DevSaveDirPath = savePath;
                                 retSearch.KvartSaveDirPath = pathForKvart;
                             }
-                            return retSearch;
+                            //теперь проверим на страницы
+                            isPaged = false;
+                            var lipage = document.DocumentNode.SelectNodes("//li[@class = 'next']");
+                            if (lipage != null)
+                            {
+                                isPaged = true;
+                                pages += 1;
+                                referer = retSearch.RefString;
+                            }
                         }
                     }
                 }
-            }
-            catch (WebException e)
-            {
-                ErrWebResponse.Add("Ошибка при загрузке объекта " + devId + "\n" + e.Message);
-                return null;
-            }
-            catch (Exception ex)
-            {
-                ErrList.Add("Ошибка при загрузке объекта " + devId + "\n" + ex.Message);
-                return null;
-            }
+                catch (WebException e)
+                {
+                    ErrWebResponse.Add("Ошибка при загрузке объекта " + devId + "\n" + e.Message);
+                    return null;
+                }
+                catch (Exception ex)
+                {
+                    ErrList.Add("Ошибка при загрузке объекта " + devId + "\n" + ex.Message);
+                    return null;
+                }
+            } while (isPaged);
+            return retSearch;
         }
 
         public void SetSaveDir(string saveDirPath, List<string> findList)
