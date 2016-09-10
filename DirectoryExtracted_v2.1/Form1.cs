@@ -127,7 +127,7 @@ namespace DirectoryExtracted_v2._1
                 MessageBox.Show(@"Не могу подключиться к серверу!");
                 return;
             }
-            var list1 = document.DocumentNode.SelectNodes("//select[@id='NewSearchFormFull_developer']").FirstOrDefault();
+            var list1 = document.DocumentNode.SelectNodes("//select[@id='landing_developer']").FirstOrDefault();
             var id = "";
 
             if (list1 == null) return;
