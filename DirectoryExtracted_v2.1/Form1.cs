@@ -638,6 +638,8 @@ namespace DirectoryExtracted_v2._1
         {
             if (subDirRet.SubDirectory.Keys.Any(c => c.ToLower().Contains("кварт")))
             {
+                subDirRet.MainSaveDirPath = subDirRet.DevSaveDirPath;
+
                 //значит сразу попали и можно обработать
                 await ProcessOne(subDirRet);
             }

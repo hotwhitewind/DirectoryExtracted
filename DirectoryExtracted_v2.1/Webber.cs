@@ -512,15 +512,25 @@ namespace DirectoryExtracted_v2._1
                             }
 
                             //найдем объекты 
-                            var li = document.DocumentNode.SelectNodes("//li[@class = 'title']");
-                            foreach (var li1 in li)
+                            var table_lines = document.DocumentNode.SelectNodes("//tr[@class = 'table-line']");
+                            //var li = document.DocumentNode.SelectNodes("//li[@class = 'title']");
+                            foreach (var tab in table_lines)
                             {
-                                var a = li1.ChildNodes.Where(c => c.Name == "a").ToList();
-                                if (!a.Any()) continue;
-                                var title = li1.InnerText;
-                                title = Regex.Replace(title, "[<>\"*:/?\\|]", "");
-                                var href = a.First().GetAttributeValue("href", "");
-                                href += "#docsContainer";
+                                var a = tab.SelectSingleNode(".//td[@data-href]");//li1.ChildNodes.Where(c => c.Name == "a").ToList();
+                                var title_td = tab.SelectSingleNode(".//td");
+                                if (a == null) continue;
+
+                                var title = title_td.InnerText;
+
+                                if (title_td.HasChildNodes)
+                                {
+                                    title = title_td.FirstChild.InnerText;
+                                }
+
+                                title = Regex.Replace(title, "[<>\"*:/?\\|\n\t\r]", "");
+                                var href = a.GetAttributeValue("data-href", "");
+                                href = href.Substring(0, href.IndexOf("layout", StringComparison.InvariantCulture));
+                                href += "materials";
                                 retSearch.SubDirectory.Add(title, MainRef + href);
                                 retSearch.DevSaveDirPath = savePath;
                                 retSearch.KvartSaveDirPath = pathForKvart;
